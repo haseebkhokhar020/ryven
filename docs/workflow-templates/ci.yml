@@ -43,7 +43,7 @@ jobs:
       - name: List SHA-256 checksums
         shell: pwsh
         run: Get-ChildItem release/*.exe | Get-FileHash -Algorithm SHA256 | Format-Table -AutoSize
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ryven-windows-unsigned
           path: release/*.exe
