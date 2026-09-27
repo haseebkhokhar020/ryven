@@ -12,7 +12,7 @@
 
 [Windows and Linux GitHub Actions run 36317489660](https://github.com/haseebkhokhar020/ryven/actions/runs/36317489660) passed on source commit `ab608c7`: TypeScript/build, 15 automated tests, npm production-dependency audit, and a packaged Linux renderer/preload/SQLite IPC smoke. On a **Windows GitHub-hosted runner**, CI built NSIS and portable executables, then launched the unpacked app, launched the portable `.exe`, silently installed and launched the installer build, and silently uninstalled it. All three launches passed the packaged renderer/preload/SQLite IPC smoke.
 
-The release workflow rebuilds the **same versioned source** on Windows, reruns tests and package smoke, and publishes SHA-256 hashes. Inspect that workflow's specific run for the release binaries; a prior CI run alone cannot prove a separately built asset's result.
+[The release-specific Windows workflow run 36318077058](https://github.com/haseebkhokhar020/ryven/actions/runs/36318077058) also **passed** on tag `v0.1.1`. It rebuilt the exact tagged source, reran typecheck, all 15 tests, the production-dependency audit, and unpacked, portable and installed Windows GUI/preload/SQLite smoke checks; silent uninstall completed. The installer and portable assets uploaded by that workflow were downloaded again and **both matched the published SHA-256 sums**.
 
 ## Remaining gates
 

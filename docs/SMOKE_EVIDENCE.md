@@ -25,7 +25,7 @@ Observed process exit: **0**. Report written by the *packaged Electron main proc
 }
 ```
 
-The smoke code calls the renderer's `window.ryven.recent()` preload bridge, which reads through the SQLite IPC path. It does not open a workspace, run terminal commands, exercise Monaco editing, test a Windows installer, or evaluate Windows code signing. The Windows smoke routine is now configured under `.github/workflows/`. An [actual Windows GitHub Actions run](https://github.com/haseebkhokhar020/ryven/actions/runs/36317215158) passed the packaged `win-unpacked/RYVEN.exe` renderer/preload/SQLite smoke. It did not test the 0.1.0 public installer and portable wrapper. The next workflow adds those explicit checks; its results must be inspected before claiming installer/portable evidence.
+The smoke code calls the renderer's `window.ryven.recent()` preload bridge, which reads through the SQLite IPC path. It does not open a workspace, run terminal commands, exercise Monaco editing, test a Windows installer, or evaluate Windows code signing. The Windows smoke routine is now configured under `.github/workflows/`. An [actual Windows GitHub Actions run](https://github.com/haseebkhokhar020/ryven/actions/runs/36317215158) passed the packaged `win-unpacked/RYVEN.exe` renderer/preload/SQLite smoke. It did not test the 0.1.0 public installer and portable wrapper. Later v0.1.1 CI and release runs below did test the portable and NSIS-installed files.
 
 Trusted publisher signing needs an appropriate code-signing certificate controlled by the project owner. No certificate has been supplied, and unsigned executables must remain labeled as such.
 
@@ -38,3 +38,9 @@ Trusted publisher signing needs an appropriate code-signing certificate controll
 - `Windows packaged smoke and unsigned installers`: built NSIS and portable Windows x64 executables **on a Windows runner**. Executed unpacked `RYVEN.exe`, the portable `.exe`, and an installed `RYVEN.exe` following silent NSIS installation. Every launch returned `ok: true`, `platform: "win32"`, `mounted: true`, `preload: true` from a real renderer/preload/SQLite IPC call. Silent uninstall completed. The build artifact was uploaded.
 
 This is **real Windows CI smoke evidence**, but a hosted runner is not an independent clean-machine manual QA pass. The smoke check does not cover opening a project, editing in Monaco, debugging, terminal input, network preview, AI provider calls, accessibility, performance, or security review. The binaries were **unsigned**; the electron-builder log explicitly reported no signing information.
+
+## v0.1.1 release asset verification — 2026-09-27
+
+[Release workflow run 36318077058](https://github.com/haseebkhokhar020/ryven/actions/runs/36318077058) passed on the tag source. Its Windows runner built the setup and portable `.exe` files, launched unpacked/portable/installed RYVEN with `platform: "win32"`, ran the renderer/preload/SQLite IPC smoke, and silently uninstalled. The uploaded release assets were downloaded and `sha256sum -c SHA256SUMS.txt` returned **OK for both binaries**.
+
+This is stronger than an untested cross-build but remains a scoped automated smoke, not a comprehensive Windows security/accessibility/performance/manual acceptance program. Electron-builder reported **no signing info**; Authenticode signing is still absent.

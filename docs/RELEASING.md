@@ -6,7 +6,7 @@ RYVEN is **not production certified**. Release workflows generate **unsigned** W
 
 The public source repository is [haseebkhokhar020/ryven](https://github.com/haseebkhokhar020/ryven). Unsigned Windows NSIS and portable executables were built locally using Wine, hashed and inspected as PE binaries, and attached to the [v0.1.0 experimental prerelease](https://github.com/haseebkhokhar020/ryven/releases/tag/v0.1.0). **They were not run on a real Windows computer** and must be treated as experimental candidates. A newly packaged Linux build passed a GUI/preload/SQLite smoke check under Xvfb; this is not evidence of Windows correctness.
 
-The owner approved the GitHub CLI's `workflow` scope. The workflows are now installed in `.github/workflows/`, with reference copies in [`docs/workflow-templates/`](workflow-templates/). **Workflow configuration is not proof of success:** inspect the [Actions page](https://github.com/haseebkhokhar020/ryven/actions) and preserve run links for builds before declaring Windows checks passed. The older v0.1.0 executables predate CI. For v0.1.1, the [Windows CI smoke run](https://github.com/haseebkhokhar020/ryven/actions/runs/36317489660) launched unpacked, portable and installed executables and completed silent uninstall. This does not constitute full production certification.
+The owner approved the GitHub CLI's `workflow` scope. The workflows are now installed in `.github/workflows/`, with reference copies in [`docs/workflow-templates/`](workflow-templates/). **Workflow configuration is not proof of success:** inspect the [Actions page](https://github.com/haseebkhokhar020/ryven/actions) and preserve run links for builds before declaring Windows checks passed. The older v0.1.0 executables predate CI. For v0.1.1, the [tagged Windows release run](https://github.com/haseebkhokhar020/ryven/actions/runs/36318077058) launched unpacked, portable and installed executables, completed silent uninstall and uploaded assets that matched their hashes on re-download. This does not constitute full production certification.
 
 Never paste a personal access token, password or signing certificate into chat or source files.
 
@@ -19,7 +19,8 @@ Never paste a personal access token, password or signing certificate into chat o
 
 ## Manual release gate (not automated)
 
-- [ ] Windows clean-machine installation and uninstall; launch from installed and portable executables. Automated packaged Windows GUI smoke is now defined in the inactive workflow template, but has not run.
+- [x] Automated GitHub-hosted Windows smoke: unpacked, portable, NSIS silent install/launch and silent uninstall on v0.1.1.
+- [ ] Independent clean-machine Windows manual installation and broader project workflow QA (not covered by smoke).
 - [ ] Workspace select, restricted mode, trust transitions, symlink/path escapes, text write and save.
 - [ ] PTY terminal input, process stop, npm run/test/build, actual test failure display.
 - [ ] Web preview on localhost, sandbox behavior and external opening.
