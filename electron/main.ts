@@ -10,6 +10,7 @@ import { scanWorkspaceSecurity } from './security';
 import { requestAI } from './ai';
 import { DebugService } from './debug';
 import { ExtensionService } from './extensions';
+import { runSmoke } from './smoke';
 import type { CreateOptions } from '../shared/contracts';
 
 let window: BrowserWindow | null = null;
@@ -45,6 +46,7 @@ async function boot() {
   window.webContents.on('will-navigate', event => event.preventDefault());
   if (app.isPackaged) await window.loadFile(path.join(__dirname, '../../dist/index.html'));
   else await window.loadURL('http://localhost:5173');
+  void runSmoke(window);
   window.on('closed', () => { debuggerService.stop(); processes.stopAll(); window = null; });
 }
 app.whenReady().then(async () => {

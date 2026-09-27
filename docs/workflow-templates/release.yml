@@ -26,7 +26,27 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm audit --omit=dev --audit-level=high
-      - run: npm run package:win
+      - name: Package Windows (optional certificate-based signing)
+        env:
+          CSC_LINK: ${{ secrets.RYVEN_WINDOWS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.RYVEN_WINDOWS_CSC_KEY_PASSWORD }}
+        run: npm run package:win
+      - name: Packaged Windows GUI / preload / SQLite smoke
+        shell: pwsh
+        run: |
+          $env:RYVEN_SMOKE_TEST = '1'
+          $env:RYVEN_SMOKE_REPORT = Join-Path $env:RUNNER_TEMP 'ryven-smoke.json'
+          $exe = (Resolve-Path 'release/win-unpacked/RYVEN.exe').Path
+          $process = Start-Process -FilePath $exe -PassThru
+          if (-not $process.WaitForExit(90000)) {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            throw 'Packaged Electron app did not finish the smoke check within 90 seconds.'
+          }
+          if ($process.ExitCode -ne 0) { throw "Packaged app exited $($process.ExitCode)" }
+          if (-not (Test-Path $env:RYVEN_SMOKE_REPORT)) { throw 'No smoke report was written.' }
+          $report = Get-Content $env:RYVEN_SMOKE_REPORT -Raw | ConvertFrom-Json
+          if (-not $report.ok -or -not $report.mounted -or -not $report.preload) { throw 'Renderer/preload smoke failed.' }
+          Write-Host "RYVEN packaged smoke passed: $($report | ConvertTo-Json -Compress)"
       - name: SHA-256 checksums
         shell: pwsh
         run: |
