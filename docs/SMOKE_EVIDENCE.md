@@ -25,6 +25,6 @@ Observed process exit: **0**. Report written by the *packaged Electron main proc
 }
 ```
 
-The smoke code calls the renderer's `window.ryven.recent()` preload bridge, which reads through the SQLite IPC path. It does not open a workspace, run terminal commands, exercise Monaco editing, test a Windows installer, or evaluate Windows code signing. The Windows smoke routine is now configured under `.github/workflows/`. Its result is **pending** until a Windows GitHub Actions run passes; the prior Linux result cannot stand in for it.
+The smoke code calls the renderer's `window.ryven.recent()` preload bridge, which reads through the SQLite IPC path. It does not open a workspace, run terminal commands, exercise Monaco editing, test a Windows installer, or evaluate Windows code signing. The Windows smoke routine is now configured under `.github/workflows/`. An [actual Windows GitHub Actions run](https://github.com/haseebkhokhar020/ryven/actions/runs/36317215158) passed the packaged `win-unpacked/RYVEN.exe` renderer/preload/SQLite smoke. It did not test the 0.1.0 public installer and portable wrapper. The next workflow adds those explicit checks; its results must be inspected before claiming installer/portable evidence.
 
 Trusted publisher signing needs an appropriate code-signing certificate controlled by the project owner. No certificate has been supplied, and unsigned executables must remain labeled as such.

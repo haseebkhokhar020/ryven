@@ -15,8 +15,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: npm
@@ -30,29 +30,16 @@ jobs:
     needs: verify
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: npm
       - run: npm ci
       - run: npm run package:win
-      - name: Packaged Windows GUI / preload / SQLite smoke
+      - name: Smoke unpacked, portable and installed Windows executables
         shell: pwsh
-        run: |
-          $env:RYVEN_SMOKE_TEST = '1'
-          $env:RYVEN_SMOKE_REPORT = Join-Path $env:RUNNER_TEMP 'ryven-smoke.json'
-          $exe = (Resolve-Path 'release/win-unpacked/RYVEN.exe').Path
-          $process = Start-Process -FilePath $exe -PassThru
-          if (-not $process.WaitForExit(90000)) {
-            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-            throw 'Packaged Electron app did not finish the smoke check within 90 seconds.'
-          }
-          if ($process.ExitCode -ne 0) { throw "Packaged app exited $($process.ExitCode)" }
-          if (-not (Test-Path $env:RYVEN_SMOKE_REPORT)) { throw 'No smoke report was written.' }
-          $report = Get-Content $env:RYVEN_SMOKE_REPORT -Raw | ConvertFrom-Json
-          if (-not $report.ok -or -not $report.mounted -or -not $report.preload) { throw 'Renderer/preload smoke failed.' }
-          Write-Host "RYVEN packaged smoke passed: $($report | ConvertTo-Json -Compress)"
+        run: ./scripts/windows-smoke.ps1
       - name: List SHA-256 checksums
         shell: pwsh
         run: Get-ChildItem release/*.exe | Get-FileHash -Algorithm SHA256 | Format-Table -AutoSize
@@ -68,8 +55,8 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: npm
