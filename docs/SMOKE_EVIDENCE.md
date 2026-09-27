@@ -28,3 +28,13 @@ Observed process exit: **0**. Report written by the *packaged Electron main proc
 The smoke code calls the renderer's `window.ryven.recent()` preload bridge, which reads through the SQLite IPC path. It does not open a workspace, run terminal commands, exercise Monaco editing, test a Windows installer, or evaluate Windows code signing. The Windows smoke routine is now configured under `.github/workflows/`. An [actual Windows GitHub Actions run](https://github.com/haseebkhokhar020/ryven/actions/runs/36317215158) passed the packaged `win-unpacked/RYVEN.exe` renderer/preload/SQLite smoke. It did not test the 0.1.0 public installer and portable wrapper. The next workflow adds those explicit checks; its results must be inspected before claiming installer/portable evidence.
 
 Trusted publisher signing needs an appropriate code-signing certificate controlled by the project owner. No certificate has been supplied, and unsigned executables must remain labeled as such.
+
+## Windows packaged executable evidence — 2026-09-27
+
+[GitHub Actions run 36317489660](https://github.com/haseebkhokhar020/ryven/actions/runs/36317489660) passed from commit `ab608c7` (RYVEN 0.1.1), including:
+
+- `Verify windows-latest`: `npm ci`, typecheck, 15 automated tests, production dependency audit and renderer/Electron build.
+- `Verify ubuntu-latest`: same checks, plus the Linux packaged GUI smoke job.
+- `Windows packaged smoke and unsigned installers`: built NSIS and portable Windows x64 executables **on a Windows runner**. Executed unpacked `RYVEN.exe`, the portable `.exe`, and an installed `RYVEN.exe` following silent NSIS installation. Every launch returned `ok: true`, `platform: "win32"`, `mounted: true`, `preload: true` from a real renderer/preload/SQLite IPC call. Silent uninstall completed. The build artifact was uploaded.
+
+This is **real Windows CI smoke evidence**, but a hosted runner is not an independent clean-machine manual QA pass. The smoke check does not cover opening a project, editing in Monaco, debugging, terminal input, network preview, AI provider calls, accessibility, performance, or security review. The binaries were **unsigned**; the electron-builder log explicitly reported no signing information.
