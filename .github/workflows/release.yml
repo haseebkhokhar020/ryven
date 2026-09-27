@@ -1,0 +1,70 @@
+name: Draft Windows release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check version matches tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'.TrimStart('v')
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          if ($tag -ne $version) { throw "Tag $tag does not match package version $version" }
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Package Windows (optional certificate-based signing)
+        env:
+          CSC_LINK: ${{ secrets.RYVEN_WINDOWS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.RYVEN_WINDOWS_CSC_KEY_PASSWORD }}
+        run: npm run package:win
+      - name: Packaged Windows GUI / preload / SQLite smoke
+        shell: pwsh
+        run: |
+          $env:RYVEN_SMOKE_TEST = '1'
+          $env:RYVEN_SMOKE_REPORT = Join-Path $env:RUNNER_TEMP 'ryven-smoke.json'
+          $exe = (Resolve-Path 'release/win-unpacked/RYVEN.exe').Path
+          $process = Start-Process -FilePath $exe -PassThru
+          if (-not $process.WaitForExit(90000)) {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            throw 'Packaged Electron app did not finish the smoke check within 90 seconds.'
+          }
+          if ($process.ExitCode -ne 0) { throw "Packaged app exited $($process.ExitCode)" }
+          if (-not (Test-Path $env:RYVEN_SMOKE_REPORT)) { throw 'No smoke report was written.' }
+          $report = Get-Content $env:RYVEN_SMOKE_REPORT -Raw | ConvertFrom-Json
+          if (-not $report.ok -or -not $report.mounted -or -not $report.preload) { throw 'Renderer/preload smoke failed.' }
+          Write-Host "RYVEN packaged smoke passed: $($report | ConvertTo-Json -Compress)"
+      - name: SHA-256 checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem release/*.exe | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash)  $($_.Name)" } | Set-Content release/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ryven-windows-release-candidate
+          path: |
+            release/*.exe
+            release/SHA256SUMS.txt
+          if-no-files-found: error
+      - name: Create draft release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          prerelease: true
+          generate_release_notes: true
+          files: |
+            release/*.exe
+            release/SHA256SUMS.txt

@@ -1,0 +1,84 @@
+name: Quality and Windows build
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: Verify ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run build
+  windows-artifacts:
+    name: Windows packaged smoke and unsigned installers
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run package:win
+      - name: Packaged Windows GUI / preload / SQLite smoke
+        shell: pwsh
+        run: |
+          $env:RYVEN_SMOKE_TEST = '1'
+          $env:RYVEN_SMOKE_REPORT = Join-Path $env:RUNNER_TEMP 'ryven-smoke.json'
+          $exe = (Resolve-Path 'release/win-unpacked/RYVEN.exe').Path
+          $process = Start-Process -FilePath $exe -PassThru
+          if (-not $process.WaitForExit(90000)) {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            throw 'Packaged Electron app did not finish the smoke check within 90 seconds.'
+          }
+          if ($process.ExitCode -ne 0) { throw "Packaged app exited $($process.ExitCode)" }
+          if (-not (Test-Path $env:RYVEN_SMOKE_REPORT)) { throw 'No smoke report was written.' }
+          $report = Get-Content $env:RYVEN_SMOKE_REPORT -Raw | ConvertFrom-Json
+          if (-not $report.ok -or -not $report.mounted -or -not $report.preload) { throw 'Renderer/preload smoke failed.' }
+          Write-Host "RYVEN packaged smoke passed: $($report | ConvertTo-Json -Compress)"
+      - name: List SHA-256 checksums
+        shell: pwsh
+        run: Get-ChildItem release/*.exe | Get-FileHash -Algorithm SHA256 | Format-Table -AutoSize
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ryven-windows-unsigned
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+  linux-packaged-smoke:
+    name: Linux packaged renderer / preload / SQLite smoke
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx electron-builder --linux dir --x64 --publish never
+      - name: Smoke packaged Linux executable
+        run: |
+          export RYVEN_SMOKE_TEST=1
+          export RYVEN_SMOKE_REPORT="$RUNNER_TEMP/ryven-smoke.json"
+          timeout 90s xvfb-run -a release/linux-unpacked/ryven --no-sandbox
+          python3 -c 'import json,os; x=json.load(open(os.environ["RYVEN_SMOKE_REPORT"])); assert x["ok"] and x["mounted"] and x["preload"] and x["platform"]=="linux"; print(x)'

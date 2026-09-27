@@ -6,11 +6,11 @@ RYVEN is **not production certified**. Release workflows generate **unsigned** W
 
 The public source repository is [haseebkhokhar020/ryven](https://github.com/haseebkhokhar020/ryven). Unsigned Windows NSIS and portable executables were built locally using Wine, hashed and inspected as PE binaries, and attached to the [v0.1.0 experimental prerelease](https://github.com/haseebkhokhar020/ryven/releases/tag/v0.1.0). **They were not run on a real Windows computer** and must be treated as experimental candidates. A newly packaged Linux build passed a GUI/preload/SQLite smoke check under Xvfb; this is not evidence of Windows correctness.
 
-The authenticated GitHub CLI does not have the OAuth `workflow` scope. GitHub rejected a push containing `.github/workflows/*.yml`. The source repository includes exact workflow templates under [`docs/workflow-templates/`](workflow-templates/), but they are **not active**. After the repository owner grants the `workflow` scope through GitHub's own authorization flow, copy those templates into `.github/workflows/`, commit and push. Do not bypass GitHub's permission gate or describe the repository as having active CI until this succeeds.
+The owner approved the GitHub CLI's `workflow` scope. The workflows are now installed in `.github/workflows/`, with reference copies in [`docs/workflow-templates/`](workflow-templates/). **Workflow configuration is not proof of success:** inspect the [Actions page](https://github.com/haseebkhokhar020/ryven/actions) and preserve run links for builds before declaring Windows checks passed. The already-published v0.1.0 executables predate CI and remain unverified on real Windows.
 
 Never paste a personal access token, password or signing certificate into chat or source files.
 
-## CI and release (only after workflow activation)
+## CI and release
 
 - On push/PR to `main`, CI runs typecheck, 15 automated tests, npm production-dependency audit and renderer/Electron build on Ubuntu and Windows. A separate Windows job uploads unsigned NSIS and portable `.exe` files as a **workflow artifact**. No release tag needed for CI artifacts.
 - Set `package.json` version to the intended release candidate, review changelog/tests, then push a matching tag (for example `v0.1.0`). `.github/workflows/release.yml` performs verification on Windows, builds both `.exe` formats, creates SHA-256 checksums and creates a **draft prerelease**. Review and test before publishing the draft.
