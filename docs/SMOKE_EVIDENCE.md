@@ -44,3 +44,7 @@ This is **real Windows CI smoke evidence**, but a hosted runner is not an indepe
 [Release workflow run 36318077058](https://github.com/haseebkhokhar020/ryven/actions/runs/36318077058) passed on the tag source. Its Windows runner built the setup and portable `.exe` files, launched unpacked/portable/installed RYVEN with `platform: "win32"`, ran the renderer/preload/SQLite IPC smoke, and silently uninstalled. The uploaded release assets were downloaded and `sha256sum -c SHA256SUMS.txt` returned **OK for both binaries**.
 
 This is stronger than an untested cross-build but remains a scoped automated smoke, not a comprehensive Windows security/accessibility/performance/manual acceptance program. Electron-builder reported **no signing info**; Authenticode signing is still absent.
+
+## Intermittent installer crash observed after release
+
+[CI run 36318549098 attempt 1](https://github.com/haseebkhokhar020/ryven/actions/runs/36318549098/attempts/1) launched unpacked and portable executables successfully, but NSIS silent setup exited `-1073741819` (`0xC0000005`, access violation). [Attempt 2](https://github.com/haseebkhokhar020/ryven/actions/runs/36318549098/attempts/2) passed on the same source. This intermittent crash is not considered resolved; track [issue #1](https://github.com/haseebkhokhar020/ryven/issues/1). Future smoke runs wait for application exit after report creation and capture available Windows Application Error logs if setup crashes. No automatic retry masks failures.

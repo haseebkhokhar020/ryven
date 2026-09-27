@@ -25,6 +25,12 @@ function Test-RyvenExecutable([string]$file, [string]$label) {
     if (-not $report.ok -or -not $report.mounted -or -not $report.preload -or $report.platform -ne 'win32') {
       throw "$label failed renderer / secure preload / SQLite IPC smoke: $($report | ConvertTo-Json -Compress)"
     }
+    # A written report can precede Electron's actual exit; never pass a crashing app.
+    $process.Refresh()
+    if (-not $process.HasExited -and -not $process.WaitForExit(15000)) {
+      throw "$label produced a report but did not exit within 15 seconds."
+    }
+    if ($process.ExitCode -ne 0) { throw "$label exited $($process.ExitCode) after writing its report." }
     Write-Host "$label passed: $($report | ConvertTo-Json -Compress)"
   } finally {
     if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
@@ -42,8 +48,18 @@ $installer = (Get-ChildItem (Join-Path $release '*-Setup.exe') | Select-Object -
 $installRoot = Join-Path $temporary 'RYVEN-install-smoke'
 if (Test-Path $installRoot) { Remove-Item $installRoot -Recurse -Force }
 Write-Host "Silently installing $installer to $installRoot"
+$installStarted = Get-Date
 $setup = Start-Process -FilePath $installer -ArgumentList '/S', "/D=$installRoot" -PassThru -Wait
-if ($setup.ExitCode -ne 0) { throw "Installer exited $($setup.ExitCode)." }
+if ($setup.ExitCode -ne 0) {
+  # Do not hide native crashes with automatic retries. Capture available crash diagnostics.
+  $applicationErrors = Get-WinEvent -FilterHashtable @{LogName = 'Application'; StartTime = $installStarted; Level = 2} -MaxEvents 20 -ErrorAction SilentlyContinue
+  foreach ($crashEvent in $applicationErrors) {
+    if ($crashEvent.Message -match 'RYVEN|NSIS|Setup') {
+      Write-Warning "Windows Application Error $($crashEvent.Id): $($crashEvent.Message)"
+    }
+  }
+  throw "Installer exited $($setup.ExitCode) (0x$('{0:X8}' -f ($setup.ExitCode -band 0xFFFFFFFF)))."
+}
 try {
   Test-RyvenExecutable (Join-Path $installRoot 'RYVEN.exe') 'installed'
 } finally {
