@@ -1,0 +1,48 @@
+name: Quality and Windows build
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: Verify ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run build
+  windows-artifacts:
+    name: Windows unsigned installers
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run package:win
+      - name: List SHA-256 checksums
+        shell: pwsh
+        run: Get-ChildItem release/*.exe | Get-FileHash -Algorithm SHA256 | Format-Table -AutoSize
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ryven-windows-unsigned
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 30

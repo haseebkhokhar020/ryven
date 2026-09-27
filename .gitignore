@@ -1,0 +1,19 @@
+node_modules/
+dist/
+dist-electron/
+release/
+*.log
+.DS_Store
+
+# Credentials and local release outputs
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+*.cert
+*.crt
+release/
+.DS_Store

@@ -1,0 +1,11 @@
+{
+  "id": "dev.ryven.example-snippets",
+  "name": "RYVEN Example Snippets",
+  "version": "0.1.0",
+  "description": "Two opt-in editor snippets. Declarative text only; no executable extension code.",
+  "permissions": ["snippets"],
+  "snippets": [
+    {"label": "JavaScript guard clause", "language": "javascript", "body": "if (!value) {\n  throw new Error('Expected value');\n}\n"},
+    {"label": "Python main guard", "language": "python", "body": "if __name__ == '__main__':\n    main()\n"}
+  ]
+}

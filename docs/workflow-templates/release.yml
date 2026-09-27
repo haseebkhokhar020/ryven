@@ -1,0 +1,50 @@
+name: Draft Windows release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check version matches tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'.TrimStart('v')
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          if ($tag -ne $version) { throw "Tag $tag does not match package version $version" }
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run package:win
+      - name: SHA-256 checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem release/*.exe | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash)  $($_.Name)" } | Set-Content release/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ryven-windows-release-candidate
+          path: |
+            release/*.exe
+            release/SHA256SUMS.txt
+          if-no-files-found: error
+      - name: Create draft release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          prerelease: true
+          generate_release_notes: true
+          files: |
+            release/*.exe
+            release/SHA256SUMS.txt
