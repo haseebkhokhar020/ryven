@@ -4,7 +4,7 @@ RYVEN is **not production certified**. Release workflows generate **unsigned** W
 
 ## Current publication status
 
-The public source repository is [haseebkhokhar020/ryven](https://github.com/haseebkhokhar020/ryven). An unsigned Windows NSIS installer and portable executable were built locally using Wine, hashed and inspected as PE binaries. **They were not run on a real Windows computer** and must be treated as experimental candidates.
+The public source repository is [haseebkhokhar020/ryven](https://github.com/haseebkhokhar020/ryven). Unsigned Windows NSIS and portable executables were built locally using Wine, hashed and inspected as PE binaries, and attached to the [v0.1.0 experimental prerelease](https://github.com/haseebkhokhar020/ryven/releases/tag/v0.1.0). **They were not run on a real Windows computer** and must be treated as experimental candidates.
 
 The authenticated GitHub CLI does not have the OAuth `workflow` scope. GitHub rejected a push containing `.github/workflows/*.yml`. The source repository includes exact workflow templates under [`docs/workflow-templates/`](workflow-templates/), but they are **not active**. After the repository owner grants the `workflow` scope through GitHub's own authorization flow, copy those templates into `.github/workflows/`, commit and push. Do not bypass GitHub's permission gate or describe the repository as having active CI until this succeeds.
 
